@@ -1,23 +1,45 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"log"
+	"todo_api/internal/config"
+	"todo_api/internal/database"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
 // import "fmt"
 
 func main() {
-	// fmt.Println("🚀 Todo API Server")
-	// fmt.Println("✅ Project setup complete!")
-	// fmt.Println("📁 Folder structure created")
+
+	var cfg *config.Config
+	var err error
+	cfg, err = config.Load()
+
+	if err != nil {
+		log.Fatal("Failed to load configuration: ", err)
+	}
+
+	var pool *pgxpool.Pool
+	pool, err = database.Connect(cfg.DatabaseURL)
+
+	if err != nil {
+		log.Fatal("Failed to connect to database: ", err)
+	}
+
+	defer pool.Close()
 
 	var router *gin.Engine = gin.Default()
 	router.SetTrustedProxies(nil)
-	router.GET("/",func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": "Todo Api is running",
-			"status": "success",
+	router.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(200, map[string]interface{}{
+			"message":  "Todo Api is running",
+			"status":   "success",
+			"database": "connected",
 		})
 	})
 
-	router.Run(":3000")
+	router.Run(":" + cfg.Port)
 
 }
